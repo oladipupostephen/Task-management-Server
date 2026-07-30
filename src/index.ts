@@ -36,15 +36,34 @@ app.get('/tasks/:id', (req, res) => {
   if (!task) {
     return res.status(404).json({ error: `Task ${id} not found` });
   }
-  
+
 
   res.json(task);
 });
 
 
+// Create a task. Client sends { "title": "..." }; server assigns id and done=false.
+app.post('/tasks', (req, res) => {
+  const { title } = req.body;
+
+  // Business rule: never trust the client — title must be present and non-empty.
+  if (title === undefined || title === null || String(title).trim() === '') {
+    return res.status(400).json({ error: 'title is required and cannot be empty' });
+  }
+
+  // Next free id is one above the current highest (handles gaps if tasks are removed later).
+  const id = tasks.length === 0 ? 1 : Math.max(...tasks.map((t) => t.id)) + 1;
+  const task = { id, title: String(title).trim(), done: false };
+
+  tasks.push(task);
+  res.status(201).json(task);
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+
 
 // 
 app.listen(PORT, () => {
