@@ -1,27 +1,30 @@
 import express from "express";
-const tasks = [{
-  id: 1,
-  title: 'Task 1',
-  done:true
-},
-{
-  id: 2,
-  title: 'Task 2',
-  done:false  
-},{
-  id: 3,
-  title: 'Task 3',
-  done:true
-}]
+const swaggerUi = require('swagger-ui-express');
+const openapi = require('../openapi.json');
+// Original demo data — POST /reset restores a fresh copy of this list.
+const SEED_TASKS = [
+  { id: 1, title: 'Buy groceries', done: false },
+  { id: 2, title: 'Walk the dog', done: true },
+  { id: 3, title: 'Read a book', done: false },
+];
+
+// In-memory task store — data is lost when the server restarts.
+const tasks = SEED_TASKS.map((task) => ({ ...task }));
 const app = express();
 const PORT = 3000;
+// OpenAPI spec — interactive docs at /docs.
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
+
+
+// API metadata — lists available endpoints for clients and docs.
 app.get('/', (req, res) => {
   res.json({
     name: 'Task API',
     version: '1.0',
-    endpoints: ['/tasks'],
+    endpoints: ['/tasks', '/stats', '/reset'],
   });
 });
+
 app.get ('/tasks', (req, res) => {
   res.json(tasks);
 });
@@ -87,6 +90,8 @@ app.delete('/tasks/:id', (req, res) => {
   tasks.splice(index, 1);
   res.status(204).send();
 });
+
+
 
 // Create a task. Client sends { "title": "..." }; server assigns id and done=false.
 app.post('/tasks', (req, res) => {
